@@ -14,25 +14,25 @@ namespace imgToQRCode
 {
     public class ImgToQRCodeConverter
     {
-        private Bitmap _image;
-        private string _way;
-        private byte[] _imageBytes;
-        private string _saveWay;
-        private string _SaveWay
+        public Bitmap image;
+        public string imageWay;
+        public byte[] imageBytes;
+        private string saveWay;
+        public string SaveWay
         {
             get
             {
-                return _saveWay;
+                return saveWay;
             }
             set
             {
                 if (!value.EndsWith(".png"))
                 {
-                    _saveWay = value + ".png";
+                    saveWay = value + ".png";
                 }
                 else
                 {
-                    _saveWay = value;
+                    saveWay = value;
                 }
             }
         }
@@ -40,24 +40,24 @@ namespace imgToQRCode
 
         public ImgToQRCodeConverter(string imageWay, string saveWay = "myQRCode.png")
         {
-            this._image = new Bitmap(imageWay);
-            this._SaveWay = saveWay;
-            this._way = imageWay;
+            this.image = new Bitmap(imageWay);
+            this.SaveWay = saveWay;
+            this.imageWay = imageWay;
             readAsync();
         }
         public string imgToBase64()
         {
-            string base64String = Convert.ToBase64String(_imageBytes.ToArray());
+            string base64String = Convert.ToBase64String(imageBytes.ToArray());
             return base64String;
         }
         private async Task readAsync()
         {
-            using (FileStream fstream = File.OpenRead(_way))
+            using (FileStream fstream = File.OpenRead(imageWay))
             {
-                _imageBytes = new byte[fstream.Length];
+                imageBytes = new byte[fstream.Length];
                 for (int i = 0; i < fstream.Length; i++)
                 {
-                    _imageBytes[i] = (byte)fstream.ReadByte();
+                    imageBytes[i] = (byte)fstream.ReadByte();
                 }
             }
         }
@@ -72,22 +72,22 @@ namespace imgToQRCode
                 { QRCodeGenerator.ECCLevel.Q, 1663 },//q <=1663 25% may be lost before recovery is not possible
                 { QRCodeGenerator.ECCLevel.H, 1273 } //h <=1273 30% may be lost before recovery is not possible
             };
-        public byte[] createQRCodeCustom(QRCodeGenerator.ECCLevel level)
+        public string createQRCodeCustom(QRCodeGenerator.ECCLevel level)
         {
             var pattern = createPattern();
             if(pattern.Length > _ECCLevelBytesDictionary[level])
-                return new byte[] { 0 };
+                return "error: big picture";
             createQRCode(level, pattern);
-            return _imageBytes;
+            return pattern;
         }
-        public byte[] createQRCodeAutomatically()
+        public string createQRCodeAutomatically()
         {
             var pattern = createPattern();
             QRCodeGenerator qrGenerator = new QRCodeGenerator();            
             if (pattern.Length > _ECCLevelBytesDictionary[QRCodeGenerator.ECCLevel.L])
-                return new byte[] { 0 };
+                return "error: big picture";
             createQRCode((QRCodeGenerator.ECCLevel)_ECCLevelBytesDictionary.Where(x => x.Value > pattern.Length).Last().Key, pattern);
-            return _imageBytes;
+            return pattern;
         }
         private void createQRCode(QRCodeGenerator.ECCLevel level,string pattern)
         {
@@ -95,7 +95,7 @@ namespace imgToQRCode
             QRCodeData qrCodeData = qrGenerator.CreateQrCode(pattern, level);
             QRCode qrCode = new QRCode(qrCodeData);
             Bitmap qrCodeImage = qrCode.GetGraphic(20);
-            qrCodeImage.Save(_saveWay, ImageFormat.Jpeg);
+            qrCodeImage.Save(saveWay, ImageFormat.Jpeg);
         }
     }
 }
